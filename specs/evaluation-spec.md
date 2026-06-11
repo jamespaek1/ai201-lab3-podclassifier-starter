@@ -1,180 +1,79 @@
-# Evaluation Spec — Pod Classifier
-
-Complete this spec **before** writing any code for Milestone 3.
-
-Use Plan or Ask mode to think through each blank field. When you're done,
-your answers here become the blueprint for `compute_accuracy()` and
-`compute_per_class_accuracy()` in `evaluate.py`.
-
----
-
-## Background: What is evaluation?
-
-After building a classifier, we need to know how well it works. Evaluation answers:
-- **Overall:** What fraction of episodes did we classify correctly?
-- **Per-class:** Are we better at some labels than others?
-
-Both functions take the same inputs: a list of predicted labels and a list of
-ground-truth labels, in the same order.
-
----
+# Evaluation Spec — Completed
 
 ## compute_accuracy(predictions, ground_truth)
 
-### What it does
-Returns the fraction of predictions that exactly match the ground truth.
+### Formula
+Accuracy equals the number of predictions that exactly match the ground-truth labels divided by the total number of predictions.
 
-### Inputs
+### Step-by-step logic
+1. If either list is empty, return `0.0`.
+2. Pair predictions and ground-truth labels with `zip()`.
+3. Count how many pairs are equal.
+4. Divide the correct count by the total number of paired items.
+5. Return the result as a float.
 
-| Parameter | Type | Description |
-|---|---|---|
-| `predictions` | `list[str]` | Labels predicted by `classify_episode()`, one per episode. |
-| `ground_truth` | `list[str]` | The correct labels, in the same order as `predictions`. |
+### Edge case — both lists are empty
+Return `0.0` because there are no examples to evaluate. This avoids division by zero.
 
-### Output
-
-| Return value | Type | Description |
-|---|---|---|
-| accuracy | `float` | A value between 0.0 and 1.0. |
-
----
-
-### Spec fields — fill these in before writing code
-
-**Formula:**
-
-```
-[blank — write out the accuracy formula in plain English.
- What counts as "correct"? What do you divide by?]
+### Worked example
+```python
+predictions = ["interview", "solo", "panel", "interview"]
+ground_truth = ["interview", "solo", "solo", "narrative"]
 ```
 
----
+Correct predictions:
 
-**Step-by-step logic:**
+1. `interview == interview` → correct
+2. `solo == solo` → correct
+3. `panel != solo` → incorrect
+4. `interview != narrative` → incorrect
 
-```
-[blank — describe the steps your code will take.
- 1. ...
- 2. ...
- 3. ...]
-```
-
----
-
-**Edge case — what if both lists are empty?**
-
-```
-[blank — what should the function return? Why?]
-```
-
----
-
-**Worked example:**
-
-```
-predictions  = ["interview", "solo", "panel", "interview"]
-ground_truth = ["interview", "solo", "solo",  "narrative"]
-
-[blank — what does compute_accuracy() return for these inputs? Show your work.]
-```
+Result: `2 / 4 = 0.5`
 
 ---
 
 ## compute_per_class_accuracy(predictions, ground_truth)
 
-### What it does
-Returns accuracy broken down by each label. For each label in `VALID_LABELS`,
-reports how many episodes with that ground-truth label were classified correctly.
+### What does correct mean for a class?
+For a class like `interview`, an episode counts as correct only when the ground-truth label is `interview` and the predicted label is also `interview`.
 
-### Inputs
+### What does total mean for a class?
+Total means the number of test episodes whose ground-truth label is that class. It is not the total number of predictions overall.
 
-| Parameter | Type | Description |
-|---|---|---|
-| `predictions` | `list[str]` | Labels predicted by `classify_episode()`. |
-| `ground_truth` | `list[str]` | Correct labels, in the same order. |
+### Step-by-step logic
+1. Initialize a dictionary for every label in `VALID_LABELS` with `correct=0`, `total=0`, and `accuracy=0.0`.
+2. Loop over each `(predicted, truth)` pair.
+3. Add one to `total` for the ground-truth label.
+4. If `predicted == truth`, add one to `correct` for that class.
+5. After the loop, compute `accuracy = correct / total` for each class.
+6. If a class has `total == 0`, leave accuracy as `0.0`.
+7. Return the stats dictionary.
 
-### Output
+### Edge case — class has no examples
+If a class has no examples in `ground_truth`, its accuracy should be `0.0`. This avoids dividing by zero and clearly shows there was no data for that class.
 
-A `dict` keyed by label. Each value is a dict with three keys:
-
+### Worked example
 ```python
-{
-    "interview": {"correct": int, "total": int, "accuracy": float},
-    "solo":      {"correct": int, "total": int, "accuracy": float},
-    "panel":     {"correct": int, "total": int, "accuracy": float},
-    "narrative": {"correct": int, "total": int, "accuracy": float},
-}
+predictions = ["interview", "interview", "solo", "panel", "panel"]
+ground_truth = ["interview", "solo", "solo", "panel", "narrative"]
 ```
+
+| label | correct | total | accuracy |
+|---|---:|---:|---:|
+| interview | 1 | 1 | 1.0 |
+| solo | 1 | 2 | 0.5 |
+| panel | 1 | 1 | 1.0 |
+| narrative | 0 | 1 | 0.0 |
 
 ---
 
-### Spec fields — fill these in before writing code
+## Reflection questions
 
-**What does "correct" mean for a given class?**
+### 1. Why is per-class accuracy more informative than overall accuracy alone?
+Overall accuracy can hide class-specific failure. A classifier could score well overall by doing well on common or easy classes while failing badly on one label. Per-class accuracy shows which categories are actually working.
 
-```
-[blank — be precise. When does an episode count as correctly classified
- for the "interview" class, for example?]
-```
+### 2. If `panel` episodes are consistently misclassified as `interview`, what does that tell you?
+It suggests the prompt or training examples are not making the panel/interview boundary clear enough. The model may be treating any multi-person conversation as an interview unless the prompt emphasizes equal-standing group discussion.
 
----
-
-**What does "total" mean for a given class?**
-
-```
-[blank — is "total" the total number of predictions, or something more specific?]
-```
-
----
-
-**Step-by-step logic:**
-
-```
-[blank — describe the steps your code will take.
- 1. Initialize ...
- 2. Loop over ...
- 3. For each pair (predicted, truth) ...
- 4. After the loop ...
- 5. Return ...]
-```
-
----
-
-**Edge case — what if a class has no examples in ground_truth (total == 0)?**
-
-```
-[blank — what should accuracy be set to? Why?
- Hint: look at the docstring in evaluate.py.]
-```
-
----
-
-**Worked example:**
-
-```
-predictions  = ["interview", "interview", "solo", "panel", "panel"]
-ground_truth = ["interview", "solo",      "solo", "panel", "narrative"]
-
-[blank — fill in the per-class results table below]
-
-label       correct  total  accuracy
-----------  -------  -----  --------
-interview   [blank]  [blank]  [blank]
-solo        [blank]  [blank]  [blank]
-panel       [blank]  [blank]  [blank]
-narrative   [blank]  [blank]  [blank]
-```
-
----
-
-## Reflection questions (discuss at the checkpoint)
-
-1. Your overall accuracy might be decent even if one class has very low accuracy.
-   Why is per-class accuracy a more informative metric than overall accuracy alone?
-
-2. If `panel` episodes consistently get misclassified as `interview`, what does
-   that tell you about your training labels or your prompt?
-
-3. You labeled 20 training episodes and evaluated on 20 test episodes (5 per class).
-   How might the evaluation results change if you had labeled 100 training episodes?
-   What if you had 200 test episodes?
+### 3. What if there were 100 training episodes or 200 test episodes?
+More high-quality training examples would likely improve the few-shot signal, especially for ambiguous classes. More test episodes would make the evaluation more reliable because each per-class score would be based on more examples.
